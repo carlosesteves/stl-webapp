@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Items</h1>
+<h1>Organizations</h1>
 <ul>
-  {% for item in items %}
-  <li><strong>{{ item.name }}</strong> {{ item.description }}</li>
+  {% for organization in organizations %}
+  <li><strong>{{ organization.name }}</strong> {{ organization.description }}</li>
   {% else %}
   <li>Nothing here yet.</li>
   {% endfor %}

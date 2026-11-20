@@ -14,7 +14,7 @@ from app.auth import (
 )
 from app.config import Settings, get_settings
 from app.db import get_session
-from app.models import Item
+from app.models import Organization
 from app.supabase import InvalidCredentials, SupabaseAuthClient, get_auth_client
 from app.templating import templates
 
@@ -70,78 +70,78 @@ def logout():
 
 
 @router.get("")
-def item_list(
+def organization_list(
     request: Request,
     session: Session = Depends(get_session),
     _: dict = Depends(require_admin),
 ):
-    items = session.scalars(select(Item).order_by(Item.name)).all()
-    return templates.TemplateResponse(request, "admin/items.html", {"items": items})
+    organizations = session.scalars(select(Organization).order_by(Organization.name)).all()
+    return templates.TemplateResponse(request, "admin/organizations.html", {"organizations": organizations})
 
 
-@router.get("/items/new")
-def new_item_form(request: Request, _: dict = Depends(require_admin)):
+@router.get("/organizations/new")
+def new_organization_form(request: Request, _: dict = Depends(require_admin)):
     return templates.TemplateResponse(
-        request, "admin/item_form.html", {"item": None, "action": "/admin/items"}
+        request, "admin/organization_form.html", {"organization": None, "action": "/admin/organizations"}
     )
 
 
-@router.post("/items")
-def create_item(
+@router.post("/organizations")
+def create_organization(
     name: str = Form(),
     description: str = Form(""),
-    published: bool = Form(False),
+    is_published: bool = Form(False),
     session: Session = Depends(get_session),
     _: dict = Depends(require_admin),
 ):
-    session.add(Item(name=name, description=description, published=published))
+    session.add(Organization(name=name, description=description, is_published=is_published))
     session.commit()
     return RedirectResponse("/admin", status_code=303)
 
 
-def get_item_or_404(session: Session, item_id: int) -> Item:
-    item = session.get(Item, item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return item
+def get_organization_or_404(session: Session, organization_id: int) -> Organization:
+    organization = session.get(Organization, organization_id)
+    if organization is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return organization
 
 
-@router.get("/items/{item_id}/edit")
-def edit_item_form(
+@router.get("/organizations/{organization_id}/edit")
+def edit_organization_form(
     request: Request,
-    item_id: int,
+    organization_id: int,
     session: Session = Depends(get_session),
     _: dict = Depends(require_admin),
 ):
-    item = get_item_or_404(session, item_id)
+    organization = get_organization_or_404(session, organization_id)
     return templates.TemplateResponse(
         request,
-        "admin/item_form.html",
-        {"item": item, "action": f"/admin/items/{item.id}"},
+        "admin/organization_form.html",
+        {"organization": organization, "action": f"/admin/organizations/{organization.id}"},
     )
 
 
-@router.post("/items/{item_id}")
-def update_item(
-    item_id: int,
+@router.post("/organizations/{organization_id}")
+def update_organization(
+    organization_id: int,
     name: str = Form(),
     description: str = Form(""),
-    published: bool = Form(False),
+    is_published: bool = Form(False),
     session: Session = Depends(get_session),
     _: dict = Depends(require_admin),
 ):
-    item = get_item_or_404(session, item_id)
-    item.name, item.description, item.published = name, description, published
+    organization = get_organization_or_404(session, organization_id)
+    organization.name, organization.description, organization.is_published = name, description, is_published
     session.commit()
     return RedirectResponse("/admin", status_code=303)
 
 
-@router.post("/items/{item_id}/delete")
-def delete_item(
-    item_id: int,
+@router.post("/organizations/{organization_id}/delete")
+def delete_organization(
+    organization_id: int,
     session: Session = Depends(get_session),
     _: dict = Depends(require_admin),
 ):
-    session.delete(get_item_or_404(session, item_id))
+    session.delete(get_organization_or_404(session, organization_id))
     session.commit()
     return RedirectResponse("/admin", status_code=303)

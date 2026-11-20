@@ -1,10 +1,10 @@
-from app.models import Item
+from app.models import Organization
 
 
-def test_home_lists_only_published_items(client, session):
+def test_home_lists_only_published_organizations(client, session):
     session.add_all([
-        Item(name="Visible", published=True),
-        Item(name="Hidden", published=False),
+        Organization(name="Visible", is_published=True),
+        Organization(name="Hidden", is_published=False),
     ])
     session.commit()
 
