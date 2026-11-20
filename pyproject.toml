@@ -7,6 +7,9 @@ dependencies = [
     "uvicorn[standard]",
     "jinja2",
     "pydantic-settings",
+    "sqlalchemy>=2.1.9",
+    "alembic>=1.20.1",
+    "psycopg[binary]>=3.3.9",
 ]
 
 [dependency-groups]
