@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Column,
     CheckConstraint,
+    Table,
     DateTime,
     ForeignKey,
     Index,
@@ -71,6 +73,29 @@ class Term(Base):
     parent: Mapped["Term | None"] = relationship(remote_side=[id])
 
 
+organization_terms = Table(
+    "organization_terms",
+    Base.metadata,
+    Column(
+        "organization_id",
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("term_id", ForeignKey("terms.id"), primary_key=True),
+    Index("ix_organization_terms_term_id", "term_id"),
+)
+
+
+class Founder(Base):
+    __tablename__ = "founders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    name: Mapped[str]
+
+
 class Organization(Base):
     __tablename__ = "organizations"
 
@@ -109,3 +134,11 @@ class Organization(Base):
     organization_type: Mapped[Term | None] = relationship(foreign_keys=[organization_type_id])
     stage: Mapped[Term | None] = relationship(foreign_keys=[stage_id])
     relevance: Mapped[Term | None] = relationship(foreign_keys=[relevance_id])
+
+    tags: Mapped[list[Term]] = relationship(secondary=organization_terms)
+    founders: Mapped[list[Founder]] = relationship(
+        cascade="all, delete-orphan", order_by=Founder.id
+    )
+
+    def tags_in(self, vocabulary: str) -> list[Term]:
+        return [tag for tag in self.tags if tag.vocabulary == vocabulary]
