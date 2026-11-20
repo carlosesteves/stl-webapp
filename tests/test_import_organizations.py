@@ -149,3 +149,25 @@ def test_rows_without_a_name_are_reported(session):
 
     assert report.created == 0
     assert any(i.column == "Name" for i in report.issues)
+
+
+def test_research_evidence_no_means_none_and_is_not_reported(session):
+    report = run(session, {"Name": "X", "Evidence-Based Research": "No"})
+
+    assert org(session, "X").tags_in("research_evidence") == []
+    assert report.issues == []
+
+
+@pytest.mark.parametrize(
+    "typo, fixed",
+    [
+        ("Tactical Analysis", "Tactical Analytics"),
+        ("Ticketing & Assess Systems", "Ticketing & Access Systems"),
+        ("Comunity Sport Platforms", "Community Sports Platforms"),
+    ],
+)
+def test_known_category_typos_are_corrected(session, typo, fixed):
+    report = run(session, {"Name": "X", "Category": typo})
+
+    assert [t.name for t in org(session, "X").tags_in("category")] == [fixed]
+    assert report.issues == []

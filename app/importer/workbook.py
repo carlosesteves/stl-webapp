@@ -85,7 +85,15 @@ UNIMPORTED_COLUMNS = (
     "Performance Impact evidence",
 )
 
-VALUE_CORRECTIONS = {"Athelete Performance": "Athlete Performance"}
+VALUE_CORRECTIONS = {
+    "Athelete Performance": "Athlete Performance",
+    "Tactical Analysis": "Tactical Analytics",
+    "Ticketing & Assess Systems": "Ticketing & Access Systems",
+    "Comunity Sport Platforms": "Community Sports Platforms",
+}
+
+# "No" in a tag column means "none", not a value
+EMPTY_TAGS = {"Evidence-Based Research": {"no"}}
 
 
 @dataclass
@@ -197,6 +205,8 @@ def _build_organization(name: str, row: dict, vocabulary: Vocabulary, report: Re
 
     for column, vocab_name in TAG_COLUMNS.items():
         for value in split_multi(row.get(column)):
+            if value.lower() in EMPTY_TAGS.get(column, ()):
+                continue
             term = _find(vocabulary, vocab_name, VALUE_CORRECTIONS.get(value, value), name, column, report, shown=value)
             if term and term not in organization.tags:
                 organization.tags.append(term)
