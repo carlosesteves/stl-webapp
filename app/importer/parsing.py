@@ -33,10 +33,13 @@ def parse_year(value) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def parse_amount_eur(value) -> Decimal | None:
+def parse_amount_eur(value, strict: bool = False) -> Decimal | None:
+    """strict=True only accepts values with a € sign or k/M suffix (so 2026 is not money)."""
     text = clean(value)
     match = AMOUNT.match(text) if text else None
     if not match:
+        return None
+    if strict and not (text.startswith("€") or match.group(2)):
         return None
     number = Decimal(match.group(1).replace(",", "."))
     suffix = (match.group(2) or "").lower()
@@ -90,6 +93,6 @@ def parse_investors(value) -> tuple[list[str], int | None]:
             year = int(year_match.group(1))
             part = part[: year_match.start()]
         name = clean(part)
-        if name and parse_amount_eur(name) is None:
+        if name and parse_amount_eur(name, strict=True) is None:
             names.append(name)
     return names, year
