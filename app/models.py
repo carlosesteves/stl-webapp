@@ -1,4 +1,14 @@
-from sqlalchemy import CheckConstraint, ForeignKey, Index, UniqueConstraint, text
+from datetime import datetime
+
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -59,3 +69,43 @@ class Term(Base):
     sort_order: Mapped[int] = mapped_column(default=0)
 
     parent: Mapped["Term | None"] = relationship(remote_side=[id])
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    legacy_index: Mapped[int | None] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column(unique=True)
+    description: Mapped[str | None]
+
+    organization_type_id: Mapped[int | None] = mapped_column(ForeignKey("terms.id"))
+    stage_id: Mapped[int | None] = mapped_column(ForeignKey("terms.id"))
+    relevance_id: Mapped[int | None] = mapped_column(ForeignKey("terms.id"))
+
+    is_mvp: Mapped[bool | None]
+    is_active: Mapped[bool | None]
+    is_published: Mapped[bool] = mapped_column(default=False)
+    ai_enabled: Mapped[bool | None]
+    scaling_potential: Mapped[bool | None]
+
+    country: Mapped[str | None]
+    founding_year: Mapped[int | None]
+    spin_off_origin: Mapped[str | None]
+    website: Mapped[str | None]
+    linkedin_url: Mapped[str | None]
+    email: Mapped[str | None]
+    email_alt: Mapped[str | None]
+    seeking: Mapped[str | None]
+    comment: Mapped[str | None]
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    organization_type: Mapped[Term | None] = relationship(foreign_keys=[organization_type_id])
+    stage: Mapped[Term | None] = relationship(foreign_keys=[stage_id])
+    relevance: Mapped[Term | None] = relationship(foreign_keys=[relevance_id])
