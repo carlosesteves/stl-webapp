@@ -16,3 +16,15 @@ def session():
     Base.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
+
+
+@pytest.fixture
+def client(session):
+    from fastapi.testclient import TestClient
+
+    from app.db import get_session
+    from app.main import create_app
+
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: session
+    return TestClient(app)
