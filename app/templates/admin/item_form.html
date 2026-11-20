@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ "Edit" if item else "New" }} item{% endblock %}
+{% block content %}
+<h1>{{ "Edit" if item else "New" }} item</h1>
+<form method="post" action="{{ action }}">
+  <label>Name <input name="name" required value="{{ item.name if item else '' }}"></label>
+  <label>Description <textarea name="description">{{ item.description if item else '' }}</textarea></label>
+  <label><input type="checkbox" name="published" {{ "checked" if item and item.published }}> Published</label>
+  <button type="submit">Save</button>
+  <a href="/admin">Cancel</a>
+</form>
+{% endblock %}

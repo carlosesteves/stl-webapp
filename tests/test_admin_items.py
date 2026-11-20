@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import select
 
 from app.auth import require_admin
 from app.models import Item
@@ -29,3 +30,28 @@ def test_admin_list_shows_published_and_unpublished(admin_client, session):
     assert response.status_code == 200
     assert "Visible" in response.text
     assert "Hidden" in response.text
+
+
+def test_create_item(admin_client, session):
+    response = admin_client.post(
+        "/admin/items",
+        data={"name": "New", "description": "Desc", "published": "on"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin"
+    item = session.scalars(select(Item)).one()
+    assert (item.name, item.description, item.published) == ("New", "Desc", True)
+
+
+def test_create_item_unchecked_box_is_unpublished(admin_client, session):
+    admin_client.post("/admin/items", data={"name": "New"})
+
+    assert session.scalars(select(Item)).one().published is False
+
+
+def test_new_item_form_renders(admin_client):
+    response = admin_client.get("/admin/items/new")
+
+    assert response.status_code == 200
+    assert 'name="name"' in response.text

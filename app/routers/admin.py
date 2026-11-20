@@ -77,3 +77,23 @@ def item_list(
 ):
     items = session.scalars(select(Item).order_by(Item.name)).all()
     return templates.TemplateResponse(request, "admin/items.html", {"items": items})
+
+
+@router.get("/items/new")
+def new_item_form(request: Request, _: dict = Depends(require_admin)):
+    return templates.TemplateResponse(
+        request, "admin/item_form.html", {"item": None, "action": "/admin/items"}
+    )
+
+
+@router.post("/items")
+def create_item(
+    name: str = Form(),
+    description: str = Form(""),
+    published: bool = Form(False),
+    session: Session = Depends(get_session),
+    _: dict = Depends(require_admin),
+):
+    session.add(Item(name=name, description=description, published=published))
+    session.commit()
+    return RedirectResponse("/admin", status_code=303)
