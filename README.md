@@ -10,6 +10,7 @@ cp .env.example .env
 docker compose up -d db
 uv sync
 uv run alembic upgrade head
+uv run python -m app.seed   # idempotent: adds missing vocabulary terms
 uv run uvicorn app.main:app --reload
 ```
 
@@ -18,7 +19,7 @@ Tests: `uv run pytest` (SQLite in memory, no Supabase needed).
 ## Layout
 
 - `app/routers/public.py` – public pages
-- `app/routers/admin.py` – `/admin` login and Item CRUD
+- `app/routers/admin.py` – `/admin` login and organization CRUD
 - `app/auth.py` – Supabase JWT verification and `require_admin`
 - `app/supabase.py` – password sign-in against Supabase Auth
 - `alembic/` – migrations
@@ -33,4 +34,4 @@ Tokens are verified by algorithm: HS256 with `SUPABASE_JWT_SECRET`, or ES256/RS2
 
 1. Create a Blueprint from this repo (`render.yaml`).
 2. Set `DATABASE_URL` (Supabase connection string; the session pooler is the safe choice on Render), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_JWT_SECRET` if needed.
-3. Migrations run on each start.
+3. Migrations and vocabulary seeding run on each start.
