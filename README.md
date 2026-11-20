@@ -14,6 +14,15 @@ uv run python -m app.seed   # idempotent: adds missing vocabulary terms
 uv run uvicorn app.main:app --reload
 ```
 
+Import the workbook (safe to re-run: existing organisations are skipped, never overwritten):
+
+```
+uv run python -m app.importer path/to/workbook.xlsx --dry-run --issues-csv issues.csv
+uv run python -m app.importer path/to/workbook.xlsx
+```
+
+The issues CSV lists values that could not be mapped (unknown tags, organisation types with no equivalent in the new taxonomy). Nothing is dropped silently.
+
 Tests: `uv run pytest` (SQLite in memory, no Supabase needed).
 
 ## Layout
