@@ -134,3 +134,14 @@ def update_item(
     item.name, item.description, item.published = name, description, published
     session.commit()
     return RedirectResponse("/admin", status_code=303)
+
+
+@router.post("/items/{item_id}/delete")
+def delete_item(
+    item_id: int,
+    session: Session = Depends(get_session),
+    _: dict = Depends(require_admin),
+):
+    session.delete(get_item_or_404(session, item_id))
+    session.commit()
+    return RedirectResponse("/admin", status_code=303)

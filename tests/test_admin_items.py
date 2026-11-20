@@ -85,3 +85,25 @@ def test_update_item(admin_client, session):
 def test_edit_missing_item_is_404(admin_client):
     assert admin_client.get("/admin/items/999/edit").status_code == 404
     assert admin_client.post("/admin/items/999", data={"name": "x"}).status_code == 404
+
+
+def test_delete_item(admin_client, session):
+    item = Item(name="Doomed")
+    session.add(item)
+    session.commit()
+
+    response = admin_client.post(f"/admin/items/{item.id}/delete")
+
+    assert response.status_code == 303
+    assert session.scalars(select(Item)).all() == []
+
+
+def test_delete_missing_item_is_404(admin_client):
+    assert admin_client.post("/admin/items/999/delete").status_code == 404
+
+
+def test_item_routes_require_admin(client):
+    client.follow_redirects = False
+
+    assert client.post("/admin/items", data={"name": "x"}).status_code == 303
+    assert client.post("/admin/items/1/delete").status_code == 303
