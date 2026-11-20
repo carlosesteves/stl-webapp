@@ -80,3 +80,57 @@ def test_asymmetric_token_without_jwks_configured_is_rejected():
 
     with pytest.raises(InvalidToken):
         verifier.verify(token)
+
+
+# --- require_admin dependency ---
+
+from fastapi import Depends, FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.auth import ACCESS_COOKIE, get_verifier, require_admin  # noqa: E402
+
+
+@pytest.fixture
+def guarded_client(verifier):
+    app = FastAPI()
+
+    @app.get("/secret")
+    def secret(claims: dict = Depends(require_admin)):
+        return {"sub": claims["sub"]}
+
+    app.dependency_overrides[get_verifier] = lambda: verifier
+    return TestClient(app)
+
+
+def test_missing_cookie_is_401(guarded_client):
+    assert guarded_client.get("/secret").status_code == 401
+
+
+def test_invalid_token_is_401(guarded_client):
+    guarded_client.cookies.set(ACCESS_COOKIE, "junk")
+
+    assert guarded_client.get("/secret").status_code == 401
+
+
+def test_non_admin_is_403(guarded_client):
+    token = hs256(make_claims(app_metadata={"role": "user"}))
+    guarded_client.cookies.set(ACCESS_COOKIE, token)
+
+    assert guarded_client.get("/secret").status_code == 403
+
+
+def test_token_without_app_metadata_is_403(guarded_client):
+    claims = make_claims()
+    del claims["app_metadata"]
+    guarded_client.cookies.set(ACCESS_COOKIE, hs256(claims))
+
+    assert guarded_client.get("/secret").status_code == 403
+
+
+def test_admin_is_allowed(guarded_client):
+    guarded_client.cookies.set(ACCESS_COOKIE, hs256(make_claims()))
+
+    response = guarded_client.get("/secret")
+
+    assert response.status_code == 200
+    assert response.json() == {"sub": "user-1"}
