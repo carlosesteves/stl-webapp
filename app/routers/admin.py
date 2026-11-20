@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
@@ -15,8 +17,10 @@ from app.auth import (
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models import Organization
-from app.supabase import InvalidCredentials, SupabaseAuthClient, get_auth_client
+from app.supabase import AuthServiceError, InvalidCredentials, SupabaseAuthClient, get_auth_client
 from app.templating import templates
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin")
 
@@ -45,9 +49,15 @@ def login(
         result = auth_client.sign_in(email, password)
     except InvalidCredentials:
         return login_error(request, "Invalid email or password", 401)
+    except AuthServiceError as error:
+        logger.error("Supabase sign-in failed: %s", error)
+        return login_error(request, "The authentication service rejected the request. Check the server's Supabase settings.", 502)
     try:
         verify_admin(result.access_token, verifier)
-    except (InvalidToken, NotAdmin):
+    except InvalidToken as error:
+        logger.error("Login token verification failed: %s", error)
+        return login_error(request, "Signed in, but the token could not be verified. Check the server's JWT settings.", 500)
+    except NotAdmin:
         return login_error(request, "This account is not an admin", 403)
 
     response = RedirectResponse("/admin", status_code=303)

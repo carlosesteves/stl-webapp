@@ -1,7 +1,7 @@
 import pytest
 
 from app.auth import ACCESS_COOKIE, TokenVerifier, get_verifier
-from app.supabase import InvalidCredentials, SignInResult, get_auth_client
+from app.supabase import AuthServiceError, InvalidCredentials, SignInResult, get_auth_client
 from tests.test_auth import SECRET, hs256, make_claims
 
 
@@ -75,3 +75,30 @@ def test_logout_clears_cookie_and_redirects(login_client):
     assert response.status_code == 303
     assert response.headers["location"] == "/admin/login"
     assert f'{ACCESS_COOKIE}=""' in response.headers["set-cookie"]
+
+
+def test_unverifiable_token_is_reported_as_a_server_problem_not_a_non_admin(login_client, caplog):
+    use_auth(login_client, hs256(make_claims(), secret="z" * 32))
+
+    response = post_login(login_client)
+
+    assert response.status_code == 500
+    assert "could not be verified" in response.text
+    assert "not an admin" not in response.text
+    assert "set-cookie" not in response.headers
+    assert "token verification failed" in caplog.text
+
+
+def test_unreachable_or_misconfigured_supabase_is_reported(login_client, caplog):
+    class BrokenAuthClient:
+        def sign_in(self, email, password):
+            raise AuthServiceError("401 from supabase")
+
+    login_client.app.dependency_overrides[get_auth_client] = lambda: BrokenAuthClient()
+
+    response = post_login(login_client)
+
+    assert response.status_code == 502
+    assert "authentication service" in response.text
+    assert "set-cookie" not in response.headers
+    assert "401 from supabase" in caplog.text
