@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.routers import admin, public
@@ -10,6 +12,12 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
     app.include_router(public.router)
     app.include_router(admin.router)
+
+    @app.exception_handler(HTTPException)
+    async def redirect_unauthenticated_admin(request: Request, exc: HTTPException):
+        if exc.status_code == 401 and request.url.path.startswith("/admin"):
+            return RedirectResponse("/admin/login", status_code=303)
+        return await http_exception_handler(request, exc)
 
     @app.get("/health")
     def health() -> dict[str, str]:

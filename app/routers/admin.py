@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.auth import (
     ACCESS_COOKIE,
@@ -7,9 +9,12 @@ from app.auth import (
     NotAdmin,
     TokenVerifier,
     get_verifier,
+    require_admin,
     verify_admin,
 )
 from app.config import Settings, get_settings
+from app.db import get_session
+from app.models import Item
 from app.supabase import InvalidCredentials, SupabaseAuthClient, get_auth_client
 from app.templating import templates
 
@@ -62,3 +67,13 @@ def logout():
     response = RedirectResponse("/admin/login", status_code=303)
     response.delete_cookie(ACCESS_COOKIE)
     return response
+
+
+@router.get("")
+def item_list(
+    request: Request,
+    session: Session = Depends(get_session),
+    _: dict = Depends(require_admin),
+):
+    items = session.scalars(select(Item).order_by(Item.name)).all()
+    return templates.TemplateResponse(request, "admin/items.html", {"items": items})
