@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Column,
@@ -7,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Numeric,
     UniqueConstraint,
     func,
     text,
@@ -140,5 +142,104 @@ class Organization(Base):
         cascade="all, delete-orphan", order_by=Founder.id
     )
 
+    events: Mapped[list["OrganizationEvent"]] = relationship(
+        back_populates="organization",
+        foreign_keys="OrganizationEvent.organization_id",
+        cascade="all, delete-orphan",
+        order_by=(
+            "[OrganizationEvent.event_date.is_(None),"
+            " OrganizationEvent.event_date, OrganizationEvent.id]"
+        ),
+    )
+
     def tags_in(self, vocabulary: str) -> list[Term]:
         return [tag for tag in self.tags if tag.vocabulary == vocabulary]
+
+
+DATE_PRECISIONS = ("day", "month", "year", "unknown")
+
+
+class OrganizationEvent(Base):
+    __tablename__ = "organization_events"
+    __table_args__ = (
+        CheckConstraint(
+            f"date_precision IN ({_quoted(DATE_PRECISIONS)})", name="date_precision_known"
+        ),
+        CheckConstraint(
+            "(event_date IS NULL) = (date_precision = 'unknown')",
+            name="unknown_precision_iff_no_date",
+        ),
+        Index("ix_organization_events_org_date", "organization_id", "event_date"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    event_type_id: Mapped[int] = mapped_column(ForeignKey("terms.id"))
+    event_date: Mapped[date | None]
+    date_precision: Mapped[str] = mapped_column(default="year")
+    title: Mapped[str]
+    description: Mapped[str | None]
+    old_value: Mapped[str | None]
+    new_value: Mapped[str | None]
+    related_org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"))
+    related_name: Mapped[str | None]
+    source_url: Mapped[str | None]
+    is_published: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    organization: Mapped[Organization] = relationship(
+        back_populates="events", foreign_keys=[organization_id]
+    )
+    event_type: Mapped[Term] = relationship()
+    related_org: Mapped[Organization | None] = relationship(foreign_keys=[related_org_id])
+    funding_round: Mapped["FundingRound | None"] = relationship(
+        back_populates="event", cascade="all, delete-orphan", uselist=False
+    )
+
+
+class FundingRound(Base):
+    __tablename__ = "funding_rounds"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("organization_events.id", ondelete="CASCADE"), unique=True
+    )
+    stage_id: Mapped[int | None] = mapped_column(ForeignKey("terms.id"))
+    amount_eur: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    notes: Mapped[str | None]
+
+    event: Mapped[OrganizationEvent] = relationship(back_populates="funding_round")
+    stage: Mapped[Term | None] = relationship()
+    investors: Mapped[list["FundingRoundInvestor"]] = relationship(
+        cascade="all, delete-orphan", order_by="FundingRoundInvestor.id"
+    )
+
+
+class FundingRoundInvestor(Base):
+    __tablename__ = "funding_round_investors"
+    __table_args__ = (
+        CheckConstraint(
+            "investor_org_id IS NOT NULL OR investor_name IS NOT NULL",
+            name="investor_org_or_name",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    funding_round_id: Mapped[int] = mapped_column(
+        ForeignKey("funding_rounds.id", ondelete="CASCADE")
+    )
+    investor_org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"))
+    investor_name: Mapped[str | None]
+
+    investor_org: Mapped[Organization | None] = relationship()
+
+    @property
+    def display_name(self) -> str:
+        return self.investor_org.name if self.investor_org else self.investor_name
