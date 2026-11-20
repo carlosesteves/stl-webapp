@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -95,5 +95,42 @@ def create_item(
     _: dict = Depends(require_admin),
 ):
     session.add(Item(name=name, description=description, published=published))
+    session.commit()
+    return RedirectResponse("/admin", status_code=303)
+
+
+def get_item_or_404(session: Session, item_id: int) -> Item:
+    item = session.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+
+@router.get("/items/{item_id}/edit")
+def edit_item_form(
+    request: Request,
+    item_id: int,
+    session: Session = Depends(get_session),
+    _: dict = Depends(require_admin),
+):
+    item = get_item_or_404(session, item_id)
+    return templates.TemplateResponse(
+        request,
+        "admin/item_form.html",
+        {"item": item, "action": f"/admin/items/{item.id}"},
+    )
+
+
+@router.post("/items/{item_id}")
+def update_item(
+    item_id: int,
+    name: str = Form(),
+    description: str = Form(""),
+    published: bool = Form(False),
+    session: Session = Depends(get_session),
+    _: dict = Depends(require_admin),
+):
+    item = get_item_or_404(session, item_id)
+    item.name, item.description, item.published = name, description, published
     session.commit()
     return RedirectResponse("/admin", status_code=303)

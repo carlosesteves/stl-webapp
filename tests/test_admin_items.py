@@ -55,3 +55,33 @@ def test_new_item_form_renders(admin_client):
 
     assert response.status_code == 200
     assert 'name="name"' in response.text
+
+
+def test_edit_form_prefilled(admin_client, session):
+    item = Item(name="Old")
+    session.add(item)
+    session.commit()
+
+    response = admin_client.get(f"/admin/items/{item.id}/edit")
+
+    assert response.status_code == 200
+    assert 'value="Old"' in response.text
+
+
+def test_update_item(admin_client, session):
+    item = Item(name="Old", published=True)
+    session.add(item)
+    session.commit()
+
+    response = admin_client.post(
+        f"/admin/items/{item.id}", data={"name": "Renamed", "description": "D"}
+    )
+
+    assert response.status_code == 303
+    session.refresh(item)
+    assert (item.name, item.description, item.published) == ("Renamed", "D", False)
+
+
+def test_edit_missing_item_is_404(admin_client):
+    assert admin_client.get("/admin/items/999/edit").status_code == 404
+    assert admin_client.post("/admin/items/999", data={"name": "x"}).status_code == 404
