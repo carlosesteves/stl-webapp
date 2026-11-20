@@ -62,6 +62,17 @@ def get_verifier() -> TokenVerifier:
     return TokenVerifier(jwt_secret=settings.supabase_jwt_secret, jwks_url=jwks_url)
 
 
+class NotAdmin(Exception):
+    pass
+
+
+def verify_admin(token: str, verifier: TokenVerifier) -> dict:
+    claims = verifier.verify(token)
+    if claims.get("app_metadata", {}).get("role") != ADMIN_ROLE:
+        raise NotAdmin()
+    return claims
+
+
 def require_admin(
     request: Request, verifier: TokenVerifier = Depends(get_verifier)
 ) -> dict:
@@ -69,9 +80,8 @@ def require_admin(
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
-        claims = verifier.verify(token)
+        return verify_admin(token, verifier)
     except InvalidToken:
         raise HTTPException(status_code=401, detail="Invalid token")
-    if claims.get("app_metadata", {}).get("role") != ADMIN_ROLE:
+    except NotAdmin:
         raise HTTPException(status_code=403, detail="Admin only")
-    return claims
