@@ -25,6 +25,17 @@ The issues CSV lists values that could not be mapped (unknown tags, organisation
 
 Tests: `uv run pytest` (SQLite in memory, no Supabase needed).
 
+## Running from VS Code (local or production database)
+
+Install the Python and Python Debugger extensions, then pick a configuration from the **Run and Debug** dropdown:
+
+| Configuration | Uses |
+|---|---|
+| `API: local`, `Migrate: local`, `Import workbook: local` | `.env.local` (docker-compose Postgres) |
+| `API: PRODUCTION database`, `Migrate: PRODUCTION database`, `Import workbook: PRODUCTION database` | `.env.production` (Supabase), after a confirmation prompt (Esc cancels) |
+
+Setup: `cp .env.local.example .env.local` and `cp .env.production.example .env.production`, then fill them in. Both files are gitignored. Values in these files override `.env`, so you can delete `.env` to avoid pointing a terminal at the wrong database by accident.
+
 ## Layout
 
 - `app/routers/public.py` – public pages

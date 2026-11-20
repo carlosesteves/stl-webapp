@@ -1,0 +1,112 @@
+{
+  // Pick a configuration from the Run and Debug dropdown. Every "PRODUCTION" entry
+  // uses .env.production (the real Supabase database) and asks for confirmation first:
+  // press Esc at the prompt to cancel the launch.
+  // Variables from the env file override anything in .env.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API: local",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload", "--port", "8000"],
+      "envFile": "${workspaceFolder}/.env.local",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "jinja": true
+    },
+    {
+      "name": "API: PRODUCTION database",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload", "--port", "8000"],
+      "envFile": "${workspaceFolder}/.env.production",
+      "env": { "PRODUCTION_CONFIRMED": "${input:confirmProduction}" },
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "jinja": true
+    },
+    {
+      "name": "Migrate: local",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "alembic",
+      "args": ["upgrade", "head"],
+      "envFile": "${workspaceFolder}/.env.local",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Migrate: PRODUCTION database",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "alembic",
+      "args": ["upgrade", "head"],
+      "envFile": "${workspaceFolder}/.env.production",
+      "env": { "PRODUCTION_CONFIRMED": "${input:confirmProduction}" },
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Import workbook: local",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.importer",
+      "args": ["${input:workbookPath}", "${input:importMode}"],
+      "envFile": "${workspaceFolder}/.env.local",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Import workbook: PRODUCTION database",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.importer",
+      "args": ["${input:workbookPath}", "${input:importMode}"],
+      "envFile": "${workspaceFolder}/.env.production",
+      "env": { "PRODUCTION_CONFIRMED": "${input:confirmProduction}" },
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "confirmProduction",
+      "type": "pickString",
+      "description": "This run will use the PRODUCTION Supabase database. Esc cancels.",
+      "options": ["Yes, use PRODUCTION"],
+      "default": "Yes, use PRODUCTION"
+    },
+    {
+      "id": "workbookPath",
+      "type": "promptString",
+      "description": "Path to the workbook (.xlsx)",
+      "default": "${userHome}/Downloads/Base_dados_sports_tech_PT_2026.xlsx"
+    },
+    {
+      "id": "importMode",
+      "type": "pickString",
+      "description": "Dry run rolls back; real import saves (and writes issues.csv)",
+      "options": [
+        { "label": "Dry run (nothing saved)", "value": "--dry-run" },
+        { "label": "Real import (saves, writes issues.csv)", "value": "--issues-csv=issues.csv" }
+      ],
+      "default": "--dry-run"
+    }
+  ]
+}
