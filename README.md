@@ -43,4 +43,4 @@ Tokens are verified by algorithm: HS256 with `SUPABASE_JWT_SECRET`, or ES256/RS2
 
 1. Create a Blueprint from this repo (`render.yaml`).
 2. Set `DATABASE_URL` (Supabase connection string; the session pooler is the safe choice on Render), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_JWT_SECRET` if needed.
-3. Migrations and vocabulary seeding run on each start.
+3. Migrations and vocabulary seeding run on each start. Each `alembic upgrade` also enables row-level security (no policies) on every table we own, so Supabase's REST API cannot read or write them; the app connects as the table owner and is unaffected.
