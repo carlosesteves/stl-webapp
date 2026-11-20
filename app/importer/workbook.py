@@ -20,6 +20,8 @@ from app.models import (
     FundingRoundInvestor,
     Organization,
     OrganizationEvent,
+    PublicFunding,
+    Relationship,
     Term,
 )
 
@@ -64,6 +66,24 @@ TAG_COLUMNS = {
     "Investor Subtype": "investor_subtype",
     "Investment Stage": "investment_stage",
 }
+
+RELATIONSHIP_COLUMNS = {
+    "Ecossystem Connections": "ecosystem_connection",
+    "Past Investments": "past_investment",
+    "Use cases": "use_case",
+    "Partnership actors": "research_link",
+}
+
+# These columns exist in the sheet but are empty today; they belong in events
+# (partnerships, pilots, incubation) or need a decision (customers, links).
+UNIMPORTED_COLUMNS = (
+    "Customers",
+    "Partnerships",
+    "Pilot Deployments",
+    "Incubation",
+    "Link",
+    "Performance Impact evidence",
+)
 
 VALUE_CORRECTIONS = {"Athelete Performance": "Athlete Performance"}
 
@@ -136,6 +156,9 @@ def import_rows(session: Session, rows: list[dict]) -> Report:
 
     for row, organization in created:
         organization.events.extend(_build_events(organization, row, vocabulary, known, report))
+        organization.public_funding.extend(_public_funding(row))
+        organization.relationships.extend(_relationships(row, known))
+        _report_unimported_columns(organization.name, row, report)
     return report
 
 
@@ -289,3 +312,37 @@ def _funding_event(name, row, vocabulary, known, report) -> OrganizationEvent | 
         ],
     )
     return event
+
+
+def _public_funding(row) -> list[PublicFunding]:
+    is_prr = parse_bool(row.get("PRR Funding,")) is True
+    project = clean(row.get("PRR Innovation Projects,"))
+    amount = parse_amount_eur(row.get("Public Funding"))
+    if not (is_prr or project or amount is not None):
+        return []
+    return [
+        PublicFunding(
+            programme="PRR" if is_prr else "Other public",
+            project_ref=project,
+            amount_eur=amount,
+        )
+    ]
+
+
+def _relationships(row, known) -> list[Relationship]:
+    relationships = []
+    for column, kind in RELATIONSHIP_COLUMNS.items():
+        for value in split_multi(row.get(column)):
+            related = known.get(value.lower())
+            relationships.append(Relationship(
+                kind=kind,
+                related_org=related,
+                related_name=None if related else value,
+            ))
+    return relationships
+
+
+def _report_unimported_columns(name, row, report) -> None:
+    for column in UNIMPORTED_COLUMNS:
+        if value := clean(row.get(column)):
+            report.issues.append(Issue(name, column, value, "Column has no home in the schema yet"))
