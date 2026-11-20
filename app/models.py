@@ -152,6 +152,15 @@ class Organization(Base):
         ),
     )
 
+    public_funding: Mapped[list["PublicFunding"]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan"
+    )
+    relationships: Mapped[list["Relationship"]] = relationship(
+        back_populates="organization",
+        foreign_keys="Relationship.organization_id",
+        cascade="all, delete-orphan",
+    )
+
     def tags_in(self, vocabulary: str) -> list[Term]:
         return [tag for tag in self.tags if tag.vocabulary == vocabulary]
 
@@ -243,3 +252,54 @@ class FundingRoundInvestor(Base):
     @property
     def display_name(self) -> str:
         return self.investor_org.name if self.investor_org else self.investor_name
+
+
+class PublicFunding(Base):
+    __tablename__ = "public_funding"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    programme: Mapped[str] = mapped_column(default="PRR")
+    project_ref: Mapped[str | None]
+    amount_eur: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    notes: Mapped[str | None]
+
+    organization: Mapped[Organization] = relationship(back_populates="public_funding")
+
+
+RELATIONSHIP_KINDS = (
+    "customer",
+    "ecosystem_connection",
+    "past_investment",
+    "use_case",
+    "research_link",
+)
+
+
+class Relationship(Base):
+    __tablename__ = "relationships"
+    __table_args__ = (
+        CheckConstraint(f"kind IN ({_quoted(RELATIONSHIP_KINDS)})", name="kind_known"),
+        CheckConstraint(
+            "related_org_id IS NOT NULL OR related_name IS NOT NULL",
+            name="related_org_or_name",
+        ),
+        Index("ix_relationships_org_kind", "organization_id", "kind"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE")
+    )
+    kind: Mapped[str]
+    related_org_id: Mapped[int | None] = mapped_column(ForeignKey("organizations.id"))
+    related_name: Mapped[str | None]
+    url: Mapped[str | None]
+    notes: Mapped[str | None]
+
+    organization: Mapped[Organization] = relationship(
+        back_populates="relationships", foreign_keys=[organization_id]
+    )
+    related_org: Mapped[Organization | None] = relationship(foreign_keys=[related_org_id])
