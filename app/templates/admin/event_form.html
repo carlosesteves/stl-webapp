@@ -1,0 +1,108 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Edit" if event else "New" }} event | Admin{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">{{ "Edit" if event else "New" }} event</h1>
+<p class="text-body-secondary mb-4">{{ organization.name }}</p>
+
+{% if errors %}
+<div class="alert alert-danger" role="alert">
+  <ul class="mb-0">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form method="post" action="{{ action }}" class="col-lg-8">
+  <div class="mb-3">
+    <label class="form-label" for="event_type_id">Type</label>
+    <select class="form-select" id="event_type_id" name="event_type_id" required>
+      <option value="">Choose…</option>
+      {% for type in event_types %}
+      <option value="{{ type.id }}" data-code="{{ type.code or '' }}"{% if form.event_type_id == type.id | string %} selected{% endif %}>{{ type.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="title">Title</label>
+    <input class="form-control" id="title" name="title" required value="{{ form.title }}">
+  </div>
+
+  <fieldset class="mb-3">
+    <legend class="form-label fs-6">Date <span class="text-body-secondary">(leave blank if unknown; fill only the parts you know)</span></legend>
+    <div class="row g-2">
+      <div class="col-4 col-md-3"><input class="form-control" name="year" inputmode="numeric" placeholder="Year" aria-label="Year" value="{{ form.year }}"></div>
+      <div class="col-4 col-md-2"><input class="form-control" name="month" inputmode="numeric" placeholder="Month" aria-label="Month" value="{{ form.month }}"></div>
+      <div class="col-4 col-md-2"><input class="form-control" name="day" inputmode="numeric" placeholder="Day" aria-label="Day" value="{{ form.day }}"></div>
+    </div>
+  </fieldset>
+
+  <div class="mb-3">
+    <label class="form-label" for="description">Description</label>
+    <textarea class="form-control" id="description" name="description" rows="3">{{ form.description }}</textarea>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label" for="old_value">Old value</label>
+      <input class="form-control" id="old_value" name="old_value" value="{{ form.old_value }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="new_value">New value</label>
+      <input class="form-control" id="new_value" name="new_value" value="{{ form.new_value }}">
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label" for="related_name">Related party</label>
+      <input class="form-control" id="related_name" name="related_name" value="{{ form.related_name }}">
+      <div class="form-text">Linked automatically if it matches an organization name.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="source_url">Source URL</label>
+      <input class="form-control" id="source_url" name="source_url" value="{{ form.source_url }}">
+    </div>
+  </div>
+
+  <fieldset class="border rounded p-3 mb-3" id="funding-fields">
+    <legend class="fs-6 float-none w-auto px-2">Funding round details</legend>
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label" for="funding_stage_id">Stage</label>
+        <select class="form-select" id="funding_stage_id" name="funding_stage_id">
+          <option value="">Unknown</option>
+          {% for stage in funding_stages %}
+          <option value="{{ stage.id }}"{% if form.funding_stage_id == stage.id | string %} selected{% endif %}>{{ stage.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="amount">Amount (EUR)</label>
+        <input class="form-control" id="amount" name="amount" placeholder="1400000 or €1.4M" value="{{ form.amount }}">
+      </div>
+    </div>
+    <label class="form-label" for="investors">Investors <span class="text-body-secondary">(one per line)</span></label>
+    <textarea class="form-control" id="investors" name="investors" rows="3">{{ form.investors }}</textarea>
+  </fieldset>
+
+  <div class="form-check mb-4">
+    <input class="form-check-input" type="checkbox" id="is_published" name="is_published"{% if form.is_published %} checked{% endif %}>
+    <label class="form-check-label" for="is_published">Public (show on the public timeline)</label>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Save</button>
+  <a class="btn btn-link" href="/admin/organizations/{{ organization.id }}">Cancel</a>
+</form>
+
+<script>
+  (function () {
+    var select = document.getElementById("event_type_id");
+    var funding = document.getElementById("funding-fields");
+    function toggle() {
+      var option = select.options[select.selectedIndex];
+      funding.hidden = !(option && option.dataset.code === "funding_round");
+    }
+    select.addEventListener("change", toggle);
+    toggle();
+  })();
+</script>
+{% endblock %}
