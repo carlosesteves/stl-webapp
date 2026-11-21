@@ -13,7 +13,7 @@
     <tbody>
       {% for organization in organizations %}
       <tr>
-        <td>{{ organization.name }}</td>
+        <td><a href="/admin/organizations/{{ organization.id }}">{{ organization.name }}</a></td>
         <td>{{ organization.description or "" }}</td>
         <td>{{ "yes" if organization.is_published else "no" }}</td>
         <td class="text-end text-nowrap">

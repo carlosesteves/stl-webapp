@@ -116,6 +116,19 @@ def get_organization_or_404(session: Session, organization_id: int) -> Organizat
     return organization
 
 
+@router.get("/organizations/{organization_id}")
+def organization_detail(
+    request: Request,
+    organization_id: int,
+    session: Session = Depends(get_session),
+    _: dict = Depends(require_admin),
+):
+    organization = get_organization_or_404(session, organization_id)
+    return templates.TemplateResponse(
+        request, "admin/organization_detail.html", {"organization": organization}
+    )
+
+
 @router.get("/organizations/{organization_id}/edit")
 def edit_organization_form(
     request: Request,
