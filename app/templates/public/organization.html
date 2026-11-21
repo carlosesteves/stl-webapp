@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ organization.name }} | STL{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/">Organizations</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ organization.name }}</li>
+  </ol>
+</nav>
+
+<h1 class="h2 mb-2">{{ organization.name }}</h1>
+{% if organization.organization_type or organization.stage %}
+<p class="mb-3">
+  {% if organization.organization_type %}<span class="badge text-bg-primary">{{ organization.organization_type.name }}</span>{% endif %}
+  {% if organization.stage %}<span class="badge text-bg-secondary">{{ organization.stage.name }}</span>{% endif %}
+</p>
+{% endif %}
+{% if organization.description %}<p class="lead">{{ organization.description }}</p>{% endif %}
+
+<dl class="row mb-4">
+  {% if organization.country %}
+  <dt class="col-sm-3 col-lg-2">Country</dt><dd class="col-sm-9 col-lg-10">{{ organization.country }}</dd>
+  {% endif %}
+  {% if organization.founding_year %}
+  <dt class="col-sm-3 col-lg-2">Founded</dt><dd class="col-sm-9 col-lg-10">{{ organization.founding_year }}</dd>
+  {% endif %}
+  {% if organization.website %}
+  <dt class="col-sm-3 col-lg-2">Website</dt>
+  <dd class="col-sm-9 col-lg-10"><a href="{{ organization.website }}" target="_blank" rel="noopener noreferrer">{{ organization.website }}</a></dd>
+  {% endif %}
+  {% if organization.linkedin_url %}
+  <dt class="col-sm-3 col-lg-2">LinkedIn</dt>
+  <dd class="col-sm-9 col-lg-10"><a href="{{ organization.linkedin_url }}" target="_blank" rel="noopener noreferrer">{{ organization.linkedin_url }}</a></dd>
+  {% endif %}
+  {% for label, names in tag_groups %}
+  <dt class="col-sm-3 col-lg-2">{{ label }}</dt>
+  <dd class="col-sm-9 col-lg-10">{% for name in names %}<span class="badge text-bg-light border me-1">{{ name }}</span>{% endfor %}</dd>
+  {% endfor %}
+</dl>
+
+<h2 class="h4 mb-3">Timeline</h2>
+{% if events %}
+<ol class="list-unstyled border-start ps-4">
+  {% for event in events %}
+  <li class="mb-4" data-testid="event">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+      {% if event.event_date %}<span class="fw-semibold" data-testid="date">{{ event | event_date }}</span>{% endif %}
+      <span class="badge text-bg-primary" data-testid="type">{{ event.event_type.name }}</span>
+    </div>
+    <div data-testid="title">{{ event.title }}</div>
+    {% if event.old_value or event.new_value %}
+    <div class="text-body-secondary">{{ event.old_value or "–" }} &rarr; {{ event.new_value or "–" }}</div>
+    {% endif %}
+    {% if event.related_org or event.related_name %}
+    <div class="text-body-secondary">With:
+      {% if event.related_org and event.related_org.is_published %}<a href="/organizations/{{ event.related_org.id }}">{{ event.related_org.name }}</a>
+      {% else %}{{ event.related_org.name if event.related_org else event.related_name }}{% endif %}
+    </div>
+    {% endif %}
+    {% if event.funding_round %}
+    {% set round = event.funding_round %}
+    <div class="text-body-secondary">
+      {% if round.stage %}{{ round.stage.name }}{% endif %}
+      {% if round.amount_eur is not none %} · {{ round.amount_eur | eur }}{% endif %}
+      {% if round.investors %} · Investors: {{ round.investors | map(attribute="display_name") | join(", ") }}{% endif %}
+    </div>
+    {% endif %}
+    {% if event.description %}<div class="mt-1">{{ event.description }}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="text-body-secondary">No public events yet.</p>
+{% endif %}
+{% endblock %}

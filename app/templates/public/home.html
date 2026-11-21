@@ -4,7 +4,7 @@
 <ul class="list-group">
   {% for organization in organizations %}
   <li class="list-group-item">
-    <strong>{{ organization.name }}</strong>
+    <a class="fw-semibold text-decoration-none" href="/organizations/{{ organization.id }}">{{ organization.name }}</a>
     {% if organization.description %}<div class="text-body-secondary">{{ organization.description }}</div>{% endif %}
   </li>
   {% else %}
