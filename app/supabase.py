@@ -26,6 +26,9 @@ class SupabaseAuthClient:
         self._anon_key = anon_key
 
     def sign_in(self, email: str, password: str) -> SignInResult:
+        for setting, value in (("SUPABASE_URL", self._base_url), ("SUPABASE_ANON_KEY", self._anon_key)):
+            if not value:
+                raise AuthServiceError(f"{setting} is not set")
         try:
             response = httpx.post(
                 f"{self._base_url}/auth/v1/token",

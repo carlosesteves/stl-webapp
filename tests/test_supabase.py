@@ -49,3 +49,20 @@ def test_network_failure_is_a_service_error(monkeypatch):
 
     with pytest.raises(AuthServiceError):
         client.sign_in("a@b.c", "pw")
+
+
+@pytest.mark.parametrize(
+    "base_url, anon_key, missing",
+    [("", "anon", "SUPABASE_URL"), ("https://x.supabase.co", "", "SUPABASE_ANON_KEY")],
+)
+def test_missing_configuration_is_reported_without_calling_supabase(monkeypatch, base_url, anon_key, missing):
+    def must_not_be_called(url, **kwargs):
+        raise AssertionError("no request should be made")
+
+    monkeypatch.setattr(httpx, "post", must_not_be_called)
+    client = SupabaseAuthClient(base_url, anon_key)
+
+    with pytest.raises(AuthServiceError) as error:
+        client.sign_in("a@b.c", "pw")
+
+    assert missing in str(error.value)
