@@ -26,11 +26,11 @@
   {% endif %}
   {% if organization.website %}
   <dt class="col-sm-3 col-lg-2">Website</dt>
-  <dd class="col-sm-9 col-lg-10"><a href="{{ organization.website }}" target="_blank" rel="noopener noreferrer">{{ organization.website }}</a></dd>
+  <dd class="col-sm-9 col-lg-10">{% if organization.website is http_url %}<a href="{{ organization.website }}" target="_blank" rel="noopener noreferrer">{{ organization.website }}</a>{% else %}{{ organization.website }}{% endif %}</dd>
   {% endif %}
   {% if organization.linkedin_url %}
   <dt class="col-sm-3 col-lg-2">LinkedIn</dt>
-  <dd class="col-sm-9 col-lg-10"><a href="{{ organization.linkedin_url }}" target="_blank" rel="noopener noreferrer">{{ organization.linkedin_url }}</a></dd>
+  <dd class="col-sm-9 col-lg-10">{% if organization.linkedin_url is http_url %}<a href="{{ organization.linkedin_url }}" target="_blank" rel="noopener noreferrer">{{ organization.linkedin_url }}</a>{% else %}{{ organization.linkedin_url }}{% endif %}</dd>
   {% endif %}
   {% for label, names in tag_groups %}
   <dt class="col-sm-3 col-lg-2">{{ label }}</dt>

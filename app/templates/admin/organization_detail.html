@@ -28,7 +28,7 @@
   <dd class="col-sm-9 col-lg-10">{{ organization.founding_year or "–" }}</dd>
   <dt class="col-sm-3 col-lg-2">Website</dt>
   <dd class="col-sm-9 col-lg-10">
-    {% if organization.website %}<a href="{{ organization.website }}" target="_blank" rel="noopener noreferrer">{{ organization.website }}</a>{% else %}–{% endif %}
+    {% if organization.website is http_url %}<a href="{{ organization.website }}" target="_blank" rel="noopener noreferrer">{{ organization.website }}</a>{% else %}{{ organization.website or "–" }}{% endif %}
   </dd>
 </dl>
 

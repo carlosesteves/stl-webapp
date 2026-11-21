@@ -1,14 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
 <h1 class="h3 mb-4">Organizations</h1>
-<ul class="list-group">
-  {% for organization in organizations %}
-  <li class="list-group-item">
-    <a class="fw-semibold text-decoration-none" href="/organizations/{{ organization.id }}">{{ organization.name }}</a>
-    {% if organization.description %}<div class="text-body-secondary">{{ organization.description }}</div>{% endif %}
-  </li>
-  {% else %}
-  <li class="list-group-item text-body-secondary">Nothing here yet.</li>
-  {% endfor %}
-</ul>
+{% if organizations %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Type</th>
+        <th scope="col">Stage</th>
+        <th scope="col">Country</th>
+        <th scope="col">Founded</th>
+        <th scope="col">Website</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for organization in organizations %}
+      <tr>
+        <td>
+          <a class="fw-semibold text-decoration-none" href="/organizations/{{ organization.id }}">{{ organization.name }}</a>
+          {% if organization.description %}<div class="small text-body-secondary">{{ organization.description }}</div>{% endif %}
+        </td>
+        <td>{{ organization.organization_type.name if organization.organization_type else "–" }}</td>
+        <td>{{ organization.stage.name if organization.stage else "–" }}</td>
+        <td>{{ organization.country or "–" }}</td>
+        <td>{{ organization.founding_year or "–" }}</td>
+        <td>
+          {% if organization.website is http_url %}
+          <a href="{{ organization.website }}" target="_blank" rel="noopener noreferrer">{{ organization.website | domain }}</a>
+          {% else %}–{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-body-secondary">Nothing here yet.</p>
+{% endif %}
 {% endblock %}
