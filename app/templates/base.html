@@ -1,12 +1,47 @@
+{% from "macros.html" import nav_link %}
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}stl-webapp{% endblock %}</title>
-  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <title>{% block title %}STL{% endblock %}</title>
+  <link rel="stylesheet" href="/static/vendor/bootstrap/bootstrap.min.css">
 </head>
-<body>
-  <main>{% block content %}{% endblock %}</main>
+<body class="d-flex flex-column min-vh-100">
+  <header class="border-bottom bg-body-tertiary">
+    {% block header %}
+    <nav class="navbar navbar-expand-md">
+      <div class="container">
+        <a class="navbar-brand fw-semibold" href="/">STL</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#main-menu" aria-controls="main-menu"
+                aria-expanded="false" aria-label="Toggle menu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="main-menu">
+          <div class="navbar-nav me-auto">
+            {{ nav_link(request, "/", "Home") }}
+          </div>
+          <div class="navbar-nav">
+            {{ nav_link(request, "/admin", "Admin", match="/admin") }}
+          </div>
+        </div>
+      </div>
+    </nav>
+    {% endblock %}
+  </header>
+
+  {% block body %}
+  <main class="container flex-grow-1 py-4">
+    {% block content %}{% endblock %}
+  </main>
+  {% endblock %}
+
+  <footer class="border-top bg-body-tertiary py-3 mt-auto">
+    <div class="container small text-body-secondary">STL webapp</div>
+  </footer>
+
+  <script src="/static/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
 </body>
 </html>

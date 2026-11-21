@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Admin | STL{% endblock %}
+
+{% block header %}
+<nav class="navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-semibold" href="/admin">STL Admin</a>
+    <form method="post" action="/admin/logout" class="d-flex">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Log out</button>
+    </form>
+  </div>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid flex-grow-1">
+  <div class="row h-100">
+    <aside class="col-md-3 col-lg-2 border-end bg-body-tertiary py-3">
+      <nav class="nav nav-pills flex-column" aria-label="Admin menu">
+        {{ nav_link(request, "/admin", "Organizations", match="/admin/organizations") }}
+      </nav>
+    </aside>
+    <main class="col-md-9 col-lg-10 py-4">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

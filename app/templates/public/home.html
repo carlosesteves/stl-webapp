@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Organizations</h1>
-<ul>
+<h1 class="h3 mb-4">Organizations</h1>
+<ul class="list-group">
   {% for organization in organizations %}
-  <li><strong>{{ organization.name }}</strong> {{ organization.description }}</li>
+  <li class="list-group-item">
+    <strong>{{ organization.name }}</strong>
+    {% if organization.description %}<div class="text-body-secondary">{{ organization.description }}</div>{% endif %}
+  </li>
   {% else %}
-  <li>Nothing here yet.</li>
+  <li class="list-group-item text-body-secondary">Nothing here yet.</li>
   {% endfor %}
 </ul>
 {% endblock %}
